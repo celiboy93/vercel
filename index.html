@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2 Link Generator</title>
+    <style>
+        body { font-family: sans-serif; background: #111; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .box { background: #222; padding: 2rem; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #0070f3; margin-top: 0; }
+        label { display: block; margin-bottom: 8px; color: #aaa; }
+        input { width: 100%; padding: 12px; margin-bottom: 20px; background: #333; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #0070f3; }
+        button { width: 100%; padding: 12px; background: #0070f3; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #005bb5; }
+        
+        .result { margin-top: 20px; display: none; background: #000; padding: 15px; border-radius: 5px; border: 1px solid #333; }
+        .link-display { color: #4ade80; word-break: break-all; font-family: monospace; margin-bottom: 10px; }
+        .copy-btn { background: #333; margin-top: 5px; font-size: 0.9rem; }
+        .copy-btn:hover { background: #444; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>🚀 Movie Link Generator</h2>
+        
+        <label>R2 Filename (ဇာတ်ကားနာမည်):</label>
+        <input type="text" id="filename" placeholder="Example: Avatar.mp4">
+        
+        <button onclick="generate()">Generate Link</button>
+        
+        <div class="result" id="resultBox">
+            <label>Your App Link:</label>
+            <div class="link-display" id="finalLink"></div>
+            <button class="copy-btn" onclick="copyLink()">Copy Link</button>
+        </div>
+    </div>
+
+    <script>
+        function generate() {
+            const filename = document.getElementById('filename').value.trim();
+            if (!filename) return alert("ဖိုင်နာမည် ထည့်ပေးပါ");
+
+            // လက်ရှိ Vercel Domain ကို အော်တိုယူမယ်
+            const baseUrl = window.location.origin;
+            
+            // Link ဖန်တီးမယ်
+            const fullLink = `${baseUrl}/api?file=${encodeURIComponent(filename)}`;
+            
+            document.getElementById('finalLink').innerText = fullLink;
+            document.getElementById('resultBox').style.display = 'block';
+        }
+
+        function copyLink() {
+            const text = document.getElementById('finalLink').innerText;
+            navigator.clipboard.writeText(text);
+            alert("Link Copied!");
+        }
+    </script>
+
+</body>
+</html>
