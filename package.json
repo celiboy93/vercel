@@ -1,0 +1,8 @@
+{
+  "name": "r2-streamer",
+  "version": "1.0.0",
+  "dependencies": {
+    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/s3-request-presigner": "latest"
+  }
+}
