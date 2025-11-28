@@ -1,6 +1,11 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+// 🔥 ၁။ ဒီစာကြောင်းက အရေးအကြီးဆုံးပါ (Server ကို Edge Mode ပြောင်းလိုက်တာပါ)
+export const config = {
+  runtime: 'edge',
+};
+
 const R2 = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -10,22 +15,32 @@ const R2 = new S3Client({
   },
 });
 
-export default async function handler(req, res) {
-  const { file } = req.query;
+// Edge Runtime မှာ req, res အစား Standard Request ကို သုံးရပါတယ်
+export default async function handler(request) {
+  const url = new URL(request.url);
+  const file = url.searchParams.get('file');
 
-  if (!file) return res.status(400).send("Filename missing");
+  if (!file) {
+    return new Response("Filename missing", { status: 400 });
+  }
 
   try {
     const command = new GetObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
       Key: file,
+      // Browser မှာ တန်းပွင့်အောင် inline ထားပါတယ်
       ResponseContentDisposition: `inline; filename="${file}"`,
+      // Speed ကောင်းအောင် Cache ဖမ်းခိုင်းထားပါတယ်
       ResponseCacheControl: "public, max-age=31536000",
     });
 
-    const signedUrl = await getSignedUrl(R2, command, { expiresIn: 10800 }); // 3 Hours
-    res.redirect(307, signedUrl);
+    // ၃ နာရီခံတဲ့ Link ထုတ်မယ်
+    const signedUrl = await getSignedUrl(R2, command, { expiresIn: 10800 });
+
+    // 🔥 Redirect (Standard Web API) 🔥
+    return Response.redirect(signedUrl, 307);
+
   } catch (error) {
-    res.status(500).send("Error: " + error.message);
+    return new Response("Error: " + error.message, { status: 500 });
   }
 }
