@@ -1,11 +1,6 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// 🔥 Vercel ကို Edge Mode နဲ့ Run ခိုင်းခြင်း (အမြန်ဆုံးစနစ်)
-export const config = {
-  runtime: 'edge',
-};
-
 const R2 = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -15,39 +10,22 @@ const R2 = new S3Client({
   },
 });
 
-export default async function handler(request) {
-  // Edge Mode မှာ URL ကို ဒီလိုယူရပါတယ်
-  const url = new URL(request.url);
-  const file = url.searchParams.get("file");
+export default async function handler(req, res) {
+  const { file } = req.query;
 
-  if (!file) {
-    return new Response(JSON.stringify({ error: "Filename missing" }), {
-      status: 400,
-      headers: { "content-type": "application/json" }
-    });
-  }
+  if (!file) return res.status(400).send("Filename missing");
 
   try {
     const command = new GetObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
       Key: file,
-      // Browser မှာ တန်းပွင့်အောင်
       ResponseContentDisposition: `inline; filename="${file}"`,
-      // Streaming ပိုမြန်အောင် Cache ဖမ်းခိုင်းမယ်
       ResponseCacheControl: "public, max-age=31536000",
     });
 
-    // ၃ နာရီ (10800 seconds)
-    const signedUrl = await getSignedUrl(R2, command, { expiresIn: 10800 });
-
-    // 🔥 Redirect (307)
-    // Edge ကနေ Redirect လုပ်တာမို့ အရမ်းမြန်ပါတယ်
-    return Response.redirect(signedUrl, 307);
-
+    const signedUrl = await getSignedUrl(R2, command, { expiresIn: 10800 }); // 3 Hours
+    res.redirect(307, signedUrl);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "content-type": "application/json" }
-    });
+    res.status(500).send("Error: " + error.message);
   }
 }
